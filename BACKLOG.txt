@@ -1,0 +1,99 @@
+BACKLOG — ssd-multi
+Fonte: reunião com Francesco em 2026-07-23 (media/Reunião Francesco - 2026-07-23 16-01-51.mp4)
+Atualizado em: 2026-09-21
+
+Legenda: [x] concluído   [~] em andamento   [ ] pendente   [-] adiado por decisão
+Referência de tempo (min) = posição na gravação.
+
+======================================================================
+PENDENTES
+======================================================================
+
+[ ] Revisar a prosa da seção 0 (taxonomia) do notebook: previa unscaled MENOS conservador;
+    a grade 2x2 mostrou o oposto (vol ~8% vs ~18–22%). Explicação provável no texto da seção 14d.
+
+[ ] Comparação de pesos janela a janela (complemento do teste de equivalência)
+    - tafmSSD-sectors.py precisa gravar rebalances_tafmssd_sectors.csv (hoje só grava V em solver_stats).
+    - tafscmSSD-sectors.py já grava rebalances_tafscmssd_sectors.csv.
+
+[ ] ROI (return on investment) na tabela de métricas   (min 37:30–38:40)
+    - Pedido do reviewer ("questão 7"). Manter o CAGR (Francesco pediu para NÃO remover).
+    - Adicionar em src/metrics/stats.py (compute_metrics) e na tabela do notebook.
+
+[ ] Minimum variance como benchmark histórico   (min 36:55)
+    - Implementar carteira de variância mínima e incluir na comparação.
+
+[ ] Turnover / custos de transação   (min 36:60, "eu esqueci disso, mas preciso testar")
+    - Hoje aparece só como "questão em aberto" no texto final do notebook.
+
+[-] Período OOS mais longo   (min 22:57)
+    - Adiado por decisão. Exploração iniciada em src/data_process.py (portSim + marketDataUS.sqlite).
+
+[ ] Submissão: discutir com Cristiano; incorporar "o modelo do Francesco" pedido pelo reviewer   (min 37:00)
+    - Não é código.
+
+[ ] Enviar dados do setor ENERGY ao Francesco (distribuição assimétrica, trabalho de
+    semivariância com Nicolò e Massimiliano)   (min 0:30–1:00)
+
+======================================================================
+CONCLUÍDOS
+======================================================================
+
+[x] Grade 2x2: Roman scaled / Roman unscaled / nosso scaled / nosso unscaled   (min 22:55–23:80)
+    - Nosso unscaled: flag --unscaled em src/tafmSSD-sectors.py (V <= V_s), saídas em
+      src/output/tafmssd-sectors-unscaled/. Roman unscaled = src/usSSD.py (N_COLS 200 -> 600 para
+      alinhar o universo com os demais; re-executado em 2026-09-21).
+    - UNSCALED: hipótese CONFIRMADA — nosso melhor em 10/11 métricas (final 1.133 vs 1.091,
+      Sharpe 2.97 vs 2.03, Sortino 5.08 vs 3.24); único modelo que domina SSD o SP500 OOS.
+    - SCALED: confirmada em retorno (1.609 vs 1.491), empate em Sharpe (5.11 vs 5.12), pior em
+      vol/drawdown/CVaR.
+    - Seção 14d do notebook v2; figuras grid_2x2_*.pdf em output/tafmssd-sectors/.
+
+[x] Teste de equivalência: formulação original (todas as restrições, K setores) vs benchmark sintético   (min 20:30–21:65)
+    - Script: src/tafscmSSD-sectors.py (todos os setores no MESMO modelo; escala Tail 1/S e
+      tolerância dos cortes idênticas ao tafmSSD-sectors.py). Saídas em src/output/tafscmssd-sectors/.
+    - WFV completo (105 janelas): max |dV*| = 3.9e-7 (105/105 dentro da tolerância dos cortes, 1e-6);
+      2.7x menos cortes lazy com o sintético; carteiras OOS quase idênticas (final 1.6080 vs 1.6089,
+      tracking error 0.28%, corr 0.9999).
+    - Tempo pareado (mesma sessão, 5 janelas de rebalanceamento): sintético 3.4x–8.2x mais rápido.
+      Arquivo: src/output/tafscmssd-sectors/timing_paired.csv.
+    - Seção 14c do notebook tafmssd_sectors_analysis_v2.ipynb; figuras equivalence_*.pdf em output/tafmssd-sectors/.
+
+[x] Correção do benchmark sintético (cumsum -> max)   (min 2:40, 7:40, 22:45)
+    - src/tafmSSD-sectors.py (2026-07-25).
+
+[x] Plot por rank com 11 curvas + sintético (não 5 janelas)   (min 3:00)
+    - Notebook v2, seção "Synthetic Benchmark por janela de rebalanceamento".
+
+[x] Plot sintético vs ENERGY (verificar coincidência)   (min 8:50–9:30)
+    - synthetic_vs_energy.pdf, synthetic_vs_energy_oos.pdf + tabela "% ranks ENERGY binding".
+
+[x] Texto explicando "constraint tightness per sector"   (min 9:50)
+    - Notebook v2, seção 5.
+
+[x] Drawdown: definição formal (W_t - max W)/max W + fórmula no texto; painel refeito   (min 24–27:30)
+    - Notebook v2, seção 8 (compute_drawdown, escala compartilhada, marcadores de máximo).
+
+[x] CAGR: fórmula explícita (média geométrica anualizada)   (min 28:20)
+    - Notebook v2, "Métricas — definições".
+
+[x] Semi-volatilidade na tabela (Sortino corrigido)   (min 30:20)
+    - Coluna "Semi-volatility (%)" em src/metrics/stats.py.
+
+[x] Coluna de retorno médio (numerador comum de Sharpe e Sortino)   (min 31:00)
+    - Coluna "Mean return (%)".
+
+[x] Cores invertidas no Max Drawdown (menor |MDD| = melhor)   (min 32:50)
+    - Corrigido na tabela de métricas do notebook v2.
+
+[x] Beta explicitamente contra o SP500   (min 33:50)
+    - Coluna "Beta vs SP500" + cabeçalho do sumário.
+
+[x] Dominância estocástica como número (não só figura)   (min 38:50)
+    - Colunas "min SSD", "% ranks SSD>=0", "Área violação".
+
+[x] Métricas adicionais
+    - Calmar Ratio.
+
+[x] Taxonomia dos modelos (scaled <-> CVaR, unscaled <-> Tail) com derivação
+    - Notebook v2, seção 0.

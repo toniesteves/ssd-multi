@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Ambiente Python
+# ─────────────────────────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Jupyter
+# ─────────────────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gravações de reunião — arquivos de vídeo/áudio são grandes demais para o git.
+# A transcrição e os pontos levantados ficam registrados em BACKLOG.txt e nas
+# seções "Pendências abertas" dos notebooks.
+# ─────────────────────────────────────────────────────────────────────────────
+media/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.m4a
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Datasets grandes
+#
+# Ignorado: o banco SQLite do portSim (~600 MB — acima do limite de 100 MB por
+# arquivo do GitHub) e seus arquivos auxiliares de transação.
+#
+# MANTIDOS no repositório (pequenos e necessários para reproduzir os modelos):
+#   src/data/marketData.csv   (1.2 MB) — preços diários + SP500
+#   src/data/factors.csv      ( 11 KB) — fatores Fama-French
+#   src/data/sectors/*.csv    (1.3 MB) — 11 setores GICS
+#   demais CSVs de src/data   (< 20 MB cada)
+# ─────────────────────────────────────────────────────────────────────────────
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Saídas regeneráveis dos modelos
+#
+# Ignorado: os dumps das janelas in-sample (65 arquivos, ~135 MB) e os modelos
+# exportados pelo CPLEX (~45 MB). Ambos são recriados a cada execução.
+#
+# MANTIDOS: portfolio_*.csv, solver_stats_*.csv, synthetic_bench-*.csv,
+# timing_paired.csv e as figuras (.pdf/.png) — são os resultados do experimento.
+# ─────────────────────────────────────────────────────────────────────────────
+src/output/**/insample-*.csv
+src/models/*.lp
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Local / editor / SO
+# ─────────────────────────────────────────────────────────────────────────────
+CLAUDE.local.md
+.claude/settings.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
