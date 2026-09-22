@@ -10,7 +10,8 @@ A research implementation of SSD-based portfolio optimization models supporting 
 | `src/scmSSD.py` | Multi-benchmark, scaled. CLI via `argparse`. |
 | `src/usSSD.py` | Single-benchmark, unscaled. |
 | `src/tafmSSD.py` | TAF-MultiSSD — reduces K benchmarks to a single synthetic benchmark via the *k-sum* operator. |
-| `src/tafmSSD-sectors.py` | TAF-MultiSSD against the 11 GICS sector equal-weighted indices. |
+| `src/tafmSSD-sectors.py` | TAF-MultiSSD against the 11 GICS sector equal-weighted indices. `--unscaled` switches the max-min constraint from `(s/S)·V <= Vs` to `V <= Vs` (Tail instead of CVaR). |
+| `src/tafscmSSD-sectors.py` | Rome MultiSSD with sector benchmarks — all 11 sectors as K separate constraint sets, no synthetic envelope. Reference used for the equivalence test. |
 
 ### Mathematical formulation (scmSSD)
 
@@ -85,7 +86,11 @@ Available benchmarks: `SP500`, `CMA`, `HML`, `MARKET`, `RMW`, `SMB` (and all 11 
 | scSSD | `output/scssd/portfolio_scssd.csv` (`SSD` column) | `insample-scssd-*.csv` |
 | scmSSD | `output/scmssd/{bench}/portfolio_scmssd_{bench}.csv` (`SSD {BENCH}` column) | `insample-scmssd-*.csv` |
 | tafmSSD | `output/tafmssd/portfolio_tafmssd.csv` (`TAF-SSD {bench_label}` column) | `synthetic_benchmark_oos.csv`, `synthetic_bench-{date}.csv` |
-| tafmSSD-sectors | `output/tafmssd-sectors/` | same structure as tafmSSD |
+| tafmSSD-sectors | `output/tafmssd-sectors/` | same structure as tafmSSD, plus `en/` with English-labelled figures |
+| tafmSSD-sectors `--unscaled` | `output/tafmssd-sectors-unscaled/portfolio_tafmssd_sectors.csv` | same structure |
+| tafscmSSD-sectors | `output/tafscmssd-sectors/portfolio_tafscmssd_sectors.csv` | `rebalances_*.csv`, `solver_stats_*.csv`, `timing_paired.csv` |
+
+`insample-*.csv` and `src/models/*.lp` are regenerated on every run and are gitignored; portfolios, solver statistics and figures are committed.
 
 ## Walk-forward validation
 
@@ -99,29 +104,51 @@ Available benchmarks: `SP500`, `CMA`, `HML`, `MARKET`, `RMW`, `SMB` (and all 11 
 ```
 ssd-multi/
 ├── src/
-│   ├── scSSD.py
-│   ├── scmSSD.py
-│   ├── usSSD.py
-│   ├── tafmSSD.py
-│   ├── tafmSSD-sectors.py
-│   ├── blotter/plots.py       # reusable plot library
-│   ├── metrics/stats.py       # compute_metrics, compute_ssd_dominance
+│   ├── scSSD.py                      # Roman Model (Scaled)
+│   ├── usSSD.py                      # Roman Model (Unscaled)
+│   ├── scmSSD.py                     # Rome MultiSSD — factor benchmarks
+│   ├── tafmSSD.py                    # TAF-MultiSSD — factor benchmarks
+│   ├── tafmSSD-sectors.py            # TAF-MultiSSD — sector benchmarks (+ --unscaled)
+│   ├── tafscmSSD-sectors.py          # Rome MultiSSD — sector benchmarks
+│   ├── blotter/plots.py              # reusable plot library
+│   ├── metrics/stats.py              # compute_metrics, compute_ssd_dominance
 │   ├── data/
-│   │   ├── marketData.csv
-│   │   ├── factors.csv
-│   │   └── sectors/           # 11 GICS sector CSV files
-│   ├── models/                # CPLEX LP model exports (.lp)
-│   ├── output/                # generated — not committed
+│   │   ├── marketData.csv            # daily prices + SP500
+│   │   ├── factors.csv               # Fama-French factors
+│   │   ├── sectors/                  # 11 GICS sector CSV files
+│   │   └── marketDataUS.sqlite       # portSim database — gitignored (~600 MB)
+│   ├── models/                       # CPLEX LP exports (.lp) — gitignored
+│   ├── output/                       # one folder per model; results are committed,
+│   │   │                             # insample-*.csv dumps are gitignored
+│   │   ├── scssd/  usssd/  scmssd/  tafmssd/
+│   │   ├── tafmssd-sectors/          # + en/ — figures with English labels
+│   │   ├── tafmssd-sectors-unscaled/
+│   │   └── tafscmssd-sectors/
 │   └── scripts/
 │       └── extract_sectors.py
 ├── notebooks/
-│   ├── scmssd_analysis.ipynb
+│   ├── tafmssd_sectors_analysis_v2.ipynb      # current analysis (PT)
+│   ├── tafmssd_sectors_analysis_v2_EN.ipynb   # current analysis (EN)
+│   ├── tafmssd_sectors_analysis.ipynb         # v1 (PT, superseded)
+│   ├── tafmssd_sectors_analysis_EN.ipynb      # v1 (EN, superseded)
 │   ├── tafmssd_analysis.ipynb
-│   ├── tafmssd_sectors_analysis.ipynb
-│   └── tafmssd_sectors_analysis_EN.ipynb
+│   ├── scmssd_analysis.ipynb
+│   └── reports/                      # HTML exports without code, for sharing
+│       ├── tafmssd_sectors_analysis_v2_report.html
+│       └── tafmssd_sectors_analysis_v2_EN_report.html
 ├── doc/
-│   └── references/            # academic papers
+│   └── references/                   # academic papers
+├── media/                            # meeting recordings — gitignored
+├── BACKLOG.txt                       # open items from the 2026-07-23 meeting
 └── requirements.txt
+```
+
+Reports are generated from the notebooks with:
+
+```bash
+cd notebooks/
+jupyter nbconvert --to html --no-input --output-dir reports \
+    --output tafmssd_sectors_analysis_v2_report tafmssd_sectors_analysis_v2.ipynb
 ```
 
 ## Dependencies
@@ -147,7 +174,11 @@ Notebooks use relative paths from `notebooks/`; the kernel must have `src/` on `
 
 | Notebook | Purpose |
 |----------|---------|
-| `scmssd_analysis.ipynb` | Full scmSSD analysis — market context, dominance, 6×6 cross-dominance |
+| `tafmssd_sectors_analysis_v2.ipynb` | **Current analysis (PT)** — sector benchmarks, equivalence test (14c), 2×2 scaled/unscaled grid (14d) |
+| `tafmssd_sectors_analysis_v2_EN.ipynb` | **Current analysis (EN)** — same content, figures regenerated with English labels |
+| `tafmssd_sectors_analysis.ipynb` | v1 of the sectors analysis (PT) — superseded by v2 |
+| `tafmssd_sectors_analysis_EN.ipynb` | v1 of the sectors analysis (EN) — superseded by v2 |
 | `tafmssd_analysis.ipynb` | Comparative: tafmSSD vs scmSSD vs scSSD — drawdown, dominance, metrics |
-| `tafmssd_sectors_analysis.ipynb` | TAF-MultiSSD with 11 GICS sector benchmarks |
-| `tafmssd_sectors_analysis_EN.ipynb` | English translation of the sectors analysis |
+| `scmssd_analysis.ipynb` | Full scmSSD analysis — market context, dominance, 6×6 cross-dominance |
+
+HTML exports without code live in `notebooks/reports/` and are the versions meant for sharing.
